@@ -9,17 +9,23 @@ const User = require("./models/User");
 const Task = require("./models/Task");
 
 const app = express();
-app.use(cors({
-  origin: "*",
-  methods: "GET,POST,PUT,DELETE",
-  allowedHeaders: "Content-Type,Authorization"
-}));
+app.use(
+  cors({
+    origin: "*",
+    methods: "GET,POST,PUT,DELETE",
+    allowedHeaders: "Content-Type,Authorization",
+  })
+);
 app.use(express.json());
 
 // DB connect
-mongoose.connect(process.env.MONGO_URI)
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log("DB connected"))
-  .catch(err => console.log(err));
+  .catch((err) => console.log("connection failed"+err));
 
 // Auth middleware
 function auth(req, res, next) {
@@ -35,8 +41,6 @@ function auth(req, res, next) {
     res.status(401).json({ msg: "Invalid token" });
   }
 }
-
-
 
 // Signup
 app.post("/api/signup", async (req, res) => {
@@ -66,8 +70,6 @@ app.post("/api/login", async (req, res) => {
   res.json({ token });
 });
 
-
-
 // Get profile
 app.get("/api/profile", auth, async (req, res) => {
   const user = await User.findById(req.userId).select("-password");
@@ -76,15 +78,12 @@ app.get("/api/profile", auth, async (req, res) => {
 
 // Update profile
 app.put("/api/profile", auth, async (req, res) => {
-  const user = await User.findByIdAndUpdate(
-    req.userId,
-    req.body,
-    { new: true }
-  ).select("-password");
+  const user = await User.findByIdAndUpdate(req.userId, req.body, {
+    new: true,
+  }).select("-password");
 
   res.json(user);
 });
-
 
 // List tasks
 app.get("/api/tasks", auth, async (req, res) => {
@@ -96,7 +95,7 @@ app.get("/api/tasks", auth, async (req, res) => {
 app.post("/api/tasks", auth, async (req, res) => {
   const task = await Task.create({
     title: req.body.title,
-    userId: req.userId
+    userId: req.userId,
   });
   res.json(task);
 });
